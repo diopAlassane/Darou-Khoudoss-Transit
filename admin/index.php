@@ -1,26 +1,36 @@
 <?php
-$host = "localhost";
-$username = "root";
-$password = "";
-$bdname = "darou_khoudoss_transit";
-try {
-    $db = new PDO("mysql:host=$host;dbname=$bdname", "$username", "$password");
-    $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-} catch (PDOException $e) {
-    die("Echec de la connexion :" . $e->getMessage());
+session_start();
+  
+if(!$_SESSION['id']){
+    header('location:login.php');
 }
 
+require_once('config.php');
+
 $sql = "SELECT COUNT(*) FROM location_vehicule";
-$res = $db->query($sql);
+$res = $pdo->query($sql);
 $count = $res->fetchColumn();
 
 $sql1 = "SELECT COUNT(*) FROM cotationfret";
-$res1 = $db->query($sql1);
+$res1 = $pdo->query($sql1);
 $count1 = $res1->fetchColumn();
 
-$sql2 = "SELECT COUNT(*) FROM users";
-$res2 = $db->query($sql2);
+$sql2 = "SELECT COUNT(*) FROM members";
+$res2 = $pdo->query($sql2);
 $count2 = $res2->fetchColumn();
+
+
+$sql3 = "SELECT COUNT(*) FROM acaht_voiture";
+$res3 = $pdo->query($sql3);
+$count3 = $res3->fetchColumn();
+
+$req = $pdo->prepare("SELECT * FROM location_vehicule ORDER BY id DESC LIMIT 5");
+$req->execute();
+$vehicule = $req->fetchAll();
+
+$req1 = $pdo->prepare("SELECT * FROM acaht_voiture ORDER BY id DESC LIMIT 5");
+$req1->execute();
+$vehicule1 = $req1->fetchAll();
 
 // require_once('check-login.php'); 
 ?>
@@ -72,14 +82,14 @@ $count2 = $res2->fetchColumn();
         <!-- Sidebar Start -->
         <div class="sidebar pe-4 pb-3">
             <nav class="navbar bg-secondary navbar-dark">
-                <a href="index.html" class="navbar-brand mx-4 mb-3">
+                <a href="index.php" class="navbar-brand mx-4 mb-3">
                     <h3 class="text-primary"><i class="fa fa-user-edit me-2"></i>D.K. TRANSIT</h3>
                 </a>
 
                 <div class="navbar-nav w-100">
                     <a href="index.php" class="nav-item nav-link active"><i class="fa fa-tachometer-alt me-2"></i>Dashboard</a>
                     <div class="nav-item dropdown">
-                        <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown"><i class="fa fa-laptop me-2"></i>Utilisateurs</a>
+                        <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown"><i class="fa fa-users me-2"></i>Utilisateurs</a>
                         <div class="dropdown-menu bg-transparent border-0">
                             <a href="signup.php" class="dropdown-item">Nouveau</a>
                             <a href="allUsers.php" class="dropdown-item">Consulter</a>
@@ -90,11 +100,12 @@ $count2 = $res2->fetchColumn();
                         <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown"><i class="fa fa-car-side me-2"></i>Véhicules</a>
                         <div class="dropdown-menu bg-transparent border-0">
                             <a href="location_vehicule.php" class="dropdown-item">Location</a>
-                            <a href="#" class="dropdown-item">Vente</a>
+                            <a href="./vente_vehicule.php" class="dropdown-item">Vente</a>
                             <!-- <a href="element.html" class="dropdown-item">Other Elements</a> -->
                         </div>
                     </div>
                     <a href="./cota.php" class="nav-item nav-link"><i class="fa fa-th me-2"></i>Cotation Fret</a>
+                    <a href="./contact_admin.php" class="nav-item nav-link"><i class="fa fa-address-book me-2"></i>Contact</a>
                     <a href="./logout.php" class="nav-item nav-link"><i class="fa fa-user me-2"></i>Se déconnecter</a>
 
                 </div>
@@ -106,16 +117,16 @@ $count2 = $res2->fetchColumn();
         <!-- Content Start -->
         <div class="content">
 
- <!-- Navbar Start -->
- <nav class="navbar navbar-expand bg-secondary navbar-dark sticky-top px-4 py-0">
+            <!-- Navbar Start -->
+            <nav class="navbar navbar-expand bg-secondary navbar-dark sticky-top px-4 py-0">
                 <a href="index.html" class="navbar-brand d-flex d-lg-none me-4">
                     <h2 class="text-primary mb-0"><i class="fa fa-user-edit"></i></h2>
                 </a>
                 <a href="#" class="sidebar-toggler flex-shrink-0">
                     <i class="fa fa-bars"></i>
                 </a>
-                
-               
+
+
             </nav>
             <!-- Navbar End -->
 
@@ -128,7 +139,7 @@ $count2 = $res2->fetchColumn();
                             <div class="ms-3">
                                 <p class="mb-2">Voitures louées</p>
                                 <h6 class="mb-0">
-                                    <?php print  $count ; ?>
+                                    <?php print  $count; ?>
                                 </h6>
                             </div>
                         </div>
@@ -138,7 +149,7 @@ $count2 = $res2->fetchColumn();
                             <i class="fa fa-chart-bar fa-3x text-primary"></i>
                             <div class="ms-3">
                                 <p class="mb-2">Voitures vendues</p>
-                                <h6 class="mb-0">1234</h6>
+                                <h6 class="mb-0"> <?php print  $count3; ?></h6>
                             </div>
                         </div>
                     </div>
@@ -147,7 +158,7 @@ $count2 = $res2->fetchColumn();
                             <i class="fa fa-chart-area fa-3x text-primary"></i>
                             <div class="ms-3">
                                 <p class="mb-2">Cotation de Fret</p>
-                                <h6 class="mb-0"> <?php print  $count1 ; ?></h6>
+                                <h6 class="mb-0"> <?php print  $count1; ?></h6>
                             </div>
                         </div>
                     </div>
@@ -156,9 +167,73 @@ $count2 = $res2->fetchColumn();
                             <i class="fa fa-chart-pie fa-3x text-primary"></i>
                             <div class="ms-3">
                                 <p class="mb-2">Utilisateurs</p>
-                                <h6 class="mb-0"><?php print  $count2 ; ?></h6>
+                                <h6 class="mb-0"><?php print  $count2; ?></h6>
                             </div>
                         </div>
+                    </div>
+                    <div class="col-xl-3 col-xl-6">
+                        <div class="card bg-light text-white mb-4">
+                            <div class="card-body">Consulter les voitures louées</div>
+                            <div class="card-footer d-flex align-items-center justify-content-between">
+                                <a class="small text-white stretched-link" href="./location_vehicule.php">Voir les
+                                    détails</a>
+                                <div class="small text-white"><i class="fas fa-angle-right"></i></div>
+                            </div>
+                        </div>
+                        <table class="table table-dark table-hover">
+                            <thead>
+                                <tr>
+                                    <th scope="col">#</th>
+                                    <th scope="col">Prenom</th>
+                                    <th scope="col">Nom</th>
+                                    <th scope="col">Début location</th>
+                                    <th scope="col">Modele de voiture</th> -->
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($vehicule as $value) : ?>
+                                    <tr>
+                                        <th scope="row"><?php echo $value["id"]; ?></th>
+                                        <td><?php echo $value["prenom"]; ?></td>
+                                        <td><?php echo $value["nom"]; ?></td>
+                                        <td><?php echo $value["dateDebut"]; ?></td>
+                                        <td><?php echo $value["modele"]; ?></td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="col-xl-3 col-xl-6">
+                        <div class="card bg-secondary text-white mb-4">
+                            <div class="card-body">Consulter les voitures vendues</div>
+                            <div class="card-footer d-flex align-items-center justify-content-between">
+                                <a class="small text-white stretched-link" href="./vente_vehicule.php">Voir les
+                                    détails</a>
+                                <div class="small text-white"><i class="fas fa-angle-right"></i></div>
+                            </div>
+                        </div>
+                        <table class="table table-dark table-hover">
+                            <thead>
+                                <tr>
+                                    <th scope="col">#</th>
+                                    <th scope="col">Prenom</th>
+                                    <th scope="col">Nom</th>
+                                    <th scope="col">Date Achat</th>
+                                    <th scope="col">Modele de voiture</th> -->
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($vehicule1 as $value) : ?>
+                                    <tr>
+                                        <th scope="row"><?php echo $value["id"]; ?></th>
+                                        <td><?php echo $value["prenom"]; ?></td>
+                                        <td><?php echo $value["nom"]; ?></td>
+                                        <td><?php echo $value["dateAchat"]; ?></td>
+                                        <td><?php echo $value["model"]; ?></td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>

@@ -1,3 +1,44 @@
+<?php
+$host = "localhost";
+$username = "root";
+$password = "";
+$bdname = "darou_khoudoss_transit";
+
+try {
+    $db = new PDO("mysql:host=$host;dbname=$bdname", "$username", "$password");
+    $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+} catch (PDOException $e) {
+    die("Echec de la connexion :" . $e->getMessage());
+}
+
+if (isset($_POST['contactez'])) {
+    $nom = $_POST['nom'];
+    $email = $_POST['email'];
+    $telephone = $_POST['telephone'];
+    $affiliation = $_POST['affiliation'];
+    $departement = $_POST['departement'];
+    $date = $_POST['date'];
+    $message = $_POST['message'];
+       
+        if (!empty($nom) && !empty($email) && !empty($telephone)) {
+            $req = "INSERT INTO contact SET nom=?,email=?,phone=?,affiliation=? ,departement=? ,dateContact=? ,messages=?";
+            $resultat = $db->prepare($req);
+            $resultat->execute([$nom, $email, $telephone, $affiliation, $departement, $date, $message]);
+    
+            if ($resultat) {
+                echo '<script language="javascript">';
+                echo 'alert("Formulaire enregistrer. Nous vous contacterons en retour dans les plus brefs délais"); location.href="contact.php"';
+                echo '</script>';
+            } else {
+                echo "echec";
+            }
+
+        } else {
+            echo "Erreur de remplir le Formulaire ";
+        }
+
+}
+?>
 <!DOCTYPE html>
 	<html lang="en">
 	<head>
@@ -201,7 +242,7 @@
 					<div class="col-lg-6">
 						<div class="ft-contact-page-form-wrapper headline">
 							<h3 class="text-center">Obtenir un devis</h3>
-							<form action="../traitements/sendMail.php" method="POST">
+							<form action="contact.php" method="POST">
 								<div class="row">
 									<div class="col-lg-6">
 										<input type="text" name="nom" id="nom" placeholder="Votre nom" required>

@@ -202,13 +202,7 @@ if (isset($_POST['louerVoiture'])) {
             <h1><span class="sub-title " style="font-size: 50px;">Location de voiture</span></h1>
             <p style="color: black;">Louer votre voiture préférer !</p>
         </div>
-        <?php 
-         if (isset($_GET['louerVoiture']) &&  $_GET['louerVoiture'] = 'true') {
-            echo "<div class=\"alert alert-success\">
-                <strong>Success!</strong> This alert box could indicate a successful or positive action.
-            </div>";
-         }
-        ?>
+      
         <form action="./reserveVehicule.php" method="POST">
             <div class="row">
                 <div class="mb-3 col-sm-6">

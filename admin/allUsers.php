@@ -1,26 +1,31 @@
 <?php
-$host = "localhost";
-$username = "root";
-$password = "";
-$bdname = "darou_khoudoss_transit";
-try {
-    $db = new PDO("mysql:host=$host;dbname=$bdname", "$username", "$password");
-    $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-} catch (PDOException $e) {
-    die("Echec de la connexion :" . $e->getMessage());
+session_start();
+  
+if(!$_SESSION['id']){
+    header('location:login.php');
 }
+
+require_once('config.php');
 
 if ($_GET['idsup']) {
     $id = $_GET['idsup'];
-    $req = "DELETE FROM users WHERE username=?";
-    $resultat = $db->prepare($req);
+    $req = "DELETE FROM members WHERE id=?";
+    $resultat = $pdo->prepare($req);
     $resultat->execute([$id]);
-    header('Location: allUsers.php');
+
+    if($resultat){
+        $success =  'L\'utilisateur a été supprimer avec succès';
+        header('Location: allUsers.php');
+    }else{
+        $errors[] = 'Echec de la suppression';
+    }
+    
 }
 
-$req = $db->prepare("SELECT * FROM users ");
+$req = $pdo->prepare("SELECT * FROM members ");
 $req->execute();
 $users = $req->fetchAll();
+
 
 // require_once('check-login.php'); 
 ?>
@@ -82,7 +87,7 @@ $users = $req->fetchAll();
                 <div class="navbar-nav w-100">
                     <a href="index.php" class="nav-item nav-link active"><i class="fa fa-tachometer-alt me-2"></i>Dashboard</a>
                     <div class="nav-item dropdown">
-                        <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown"><i class="fa fa-laptop me-2"></i>Utilisateurs</a>
+                        <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown"><i class="fa fa-users me-2"></i>Utilisateurs</a>
                         <div class="dropdown-menu bg-transparent border-0">
                             <a href="signup.php" class="dropdown-item">Nouveau</a>
                             <a href="allUsers.php" class="dropdown-item">Consulter</a>
@@ -93,11 +98,12 @@ $users = $req->fetchAll();
                         <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown"><i class="fa fa-car-side me-2"></i>Véhicules</a>
                         <div class="dropdown-menu bg-transparent border-0">
                             <a href="location_vehicule.php" class="dropdown-item">Location</a>
-                            <a href="#" class="dropdown-item">Vente</a>
+                            <a href="./vente_vehicule.php" class="dropdown-item">Vente</a>
                             <!-- <a href="element.html" class="dropdown-item">Other Elements</a> -->
                         </div>
                     </div>
                     <a href="./cota.php" class="nav-item nav-link"><i class="fa fa-th me-2"></i>Cotation Fret</a>
+                    <a href="./contact_admin.php" class="nav-item nav-link"><i class="fa fa-address-book me-2"></i>Contact</a>
                     <a href="./logout.php" class="nav-item nav-link"><i class="fa fa-user me-2"></i>Se déconnecter</a>
 
                 </div>
@@ -127,24 +133,43 @@ $users = $req->fetchAll();
                 <div class="d-flex justify-content-between mb-3">
                     <a href="./signup.php" class=" btn btn-danger">NOUVEAU</a>
                 </div>
+                <?php 
+				if(isset($errors) && count($errors) > 0)
+				{
+					foreach($errors as $error_msg)
+					{
+						echo '<div class="alert alert-danger">'.$error_msg.'</div>';
+					}
+                }
+                
+                if(isset($success))
+                {
+                    
+                    echo '<div class="alert alert-success">'.$success.'</div>';
+                }
+			?>
                 <table class="table table-dark table-hover">
                     <thead>
                         <tr>
                             <th scope="col">#</th>
-                            <th scope="col">Username</th>
-                            <th scope="col">email</th>
-                            <th scope="col">Actions</th>
+                            <th scope="col">Prénom</th>
+                            <th scope="col">Nom</th>
+                            <th scope="col">Adresse Email</th>
+                            <th scope="col">Téléphone</th>
+                            <th scope="col">Action</th>
                         </tr>
                     </thead>
                     <tbody>
                         <?php foreach ($users as $value) : ?>
                             <tr>
                                 <th scope="row"><?php echo $value["id"]; ?></th>
-                                <td><?php echo $value["username"]; ?></td>
+                                <td><?php echo $value["first_name"]; ?></td>
+                                <td><?php echo $value["last_name"]; ?></td>
                                 <td><?php echo $value["email"]; ?></td>
+                                <td><?php echo $value["phone"]; ?></td>
                                 <td>
-                                    <a class="btn btn-outline-primary" href="#">Voir</a>
-                                    <a class="btn btn-outline-danger" href="allUsers.php?idsup=<?php echo $value['username'] ?>">
+                                    <!-- <a class="btn btn-outline-primary" href="#">Voir</a> -->
+                                    <a class="btn btn-outline-danger" href="allUsers.php?idsup=<?php echo $value['id'] ?>">
                                         Suppimer
                                     </a>
                                 </td>

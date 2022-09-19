@@ -1,3 +1,44 @@
+<?php
+$host = "localhost";
+$username = "root";
+$password = "";
+$bdname = "darou_khoudoss_transit";
+
+try {
+    $db = new PDO("mysql:host=$host;dbname=$bdname", "$username", "$password");
+    $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+} catch (PDOException $e) {
+    die("Echec de la connexion :" . $e->getMessage());
+}
+
+if (isset($_POST['achat'])) {
+    $prenom = $_POST['prenom'];
+    $nom = $_POST['nom'];
+    $phone = $_POST['phone'];
+    $adresse = $_POST['adresse'];
+    $date = $_POST['date'];
+    $model = $_POST['modele'];
+
+    if (!empty($nom) && !empty($prenom) && !empty($phone)) {
+        $req = "INSERT INTO acaht_voiture SET prenom=?,nom=?,phone=?,adresse=? ,dateAchat=? ,model=?";
+        $resultat = $db->prepare($req);
+        $resultat->execute([$prenom, $nom, $phone, $adresse, $date, $model]);
+
+        if ($resultat) {
+            echo '<script language="javascript">';
+            echo 'alert("Votre de demande d\'achat a été enregistrer. Nous vous contacterons dans les plus brefs délais"); location.href="venteVehicule.php"';
+            echo '</script>';
+        } else {
+            echo "echec";
+        }
+        // header("location: reserveVehicule.php");
+    } else {
+        echo "Erreur de remplir le Formulaire ";
+    }
+}
+?>
+
+
 <!DOCTYPE html>
 <html lang="en">
 
@@ -154,7 +195,53 @@
 
     <!-- Start of Service page section
 	============================================= -->
-   <h6 style="font-size: 100; margin-top: 50px; margin-bottom: 100px; text-align:center">Ce service est momentanément indisponible</h6>
+    <div class="container mb-50">
+        <div class="mp-5 mb-5">
+            <h1><span class="sub-title " style="font-size: 50px;">Acheter de voiture</span></h1>
+            <p style="color: black;">Acheter votre voiture préférer !</p>
+        </div>
+   
+        <form action="./venteVehicule.php" method="POST">
+            <div class="row">
+                <div class="mb-3 col-sm-6">
+                    <label class="form-label text-dark" for="prenom">Prénom <span style="color: red;">*</span></label>
+                    <input type="text" class="form-control" id="prenom" name="prenom" required>
+                </div>
+                <div class="mb-3 col-sm-6">
+                    <label class="form-label text-dark" for="nom">Nom de famille <span style="color: red;">*</span></label>
+                    <input type="text" class="form-control" id="nom" name="nom" required>
+                </div>
+                <div class="mb-3 col-sm-6">
+                    <label class="form-label text-dark" for="phone">Téléphone <span style="color: red;">*</span></label> <br>
+                    <input id="phone" class="form-control" type="tel" name="phone" required />
+                </div>
+                <div class="mb-3 col-sm-6">
+                    <label class="form-label text-dark" for="adresse">Adresse<span style="color: red;"></span></label>
+                    <input type="text" class="form-control" id="adresse" name="adresse">
+                </div>
+                <div class="mb-3 col-sm-6">
+                    <label class="form-label text-dark" for="date">Date<span style="color: red;"></span></label>
+                    <input type="datetime-local" class="form-control" id="date" name="date">
+                </div>
+                <div class="mb-3 col-sm-6">
+                    <label class="form-label text-dark" for="modele">Modéle de voiture<span style="color: red;"></span></label>
+                    <select name="modele" id="modele" class="form-control text-center text-black">
+                        <option value="0" selected disabled>-- Choisissez un modéle --</option>
+                        <option value="HYUNDAI-GRANDEUR">HYUNDAI - GRANDEUR</option>
+                        <option value="FORD-Fusion">FORD - Fusion</option>
+                        <option value="FORD-ESCAPE">FORD - ESCAPE</option>
+                        <option value="FORD-EXPLORER">FORD - EXPLORER</option>
+                        <option value="JEEP - GRAND CHEROKEE">JEEP - GRAND CHEROKEE</option>
+                        <option value="MITSUBISHI - L200">MITSUBISHI - L200</option>
+                        <option value="MITSUBISHI - OUTLANDER">MITSUBISHI - OUTLANDER</option>
+                        <option value="HYUNDAI - SANTA FE">HYUNDAI - SANTA FE</option>
+                        <option value="HYUNDAI - SANTA FE">HYUNDAI - SANTA FE</option>
+                    </select>
+                </div>
+                <button type="submit" name="achat" class="btn btn-success mb-20 col-sm-3" style="margin-bottom :50px;">Soumettre</button>
+            </div>
+        </form>
+    </div>
     <!-- End of Service page section
 	============================================= -->
 
@@ -164,21 +251,6 @@
     <!-- Start of Footer   section
 	============================================= -->
     <footer id="ft-footer-2" class="ft-footer-section-2" data-background="assets/img/bg/f-bg.png">
-        <div class="ft-footer-newslatter position-relative">
-            <div class="container">
-                <div class="ft-footer-newslatter-content d-flex justify-content-between align-items-center flex-wrap">
-                    <div class="ft-footer-newslatter-text headline">
-                        <h2>Inscrivez-vous pour recevoir des nouvelles.</h2>
-                    </div>
-                    <div class="ft-footer-newslatter-form position-relative">
-                        <form action="#">
-                            <input type="text" placeholder="Email">
-                            <button type="submit">Abonnez-vous maintant</button>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        </div>
         <div class="ft-footer-widget-wrapper-2">
             <div class="container">
                 <div class="row">

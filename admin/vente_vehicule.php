@@ -1,21 +1,22 @@
 <?php
-$host = "localhost";
-$username = "root";
-$password = "";
-$bdname = "darou_khoudoss_transit";
-try {
-    $db = new PDO("mysql:host=$host;dbname=$bdname", "$username", "$password");
-    $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-} catch (PDOException $e) {
-    die("Echec de la connexion :" . $e->getMessage());
+session_start();
+  
+if(!$_SESSION['id']){
+    header('location:login.php');
 }
 
-if ($_GET['idmod']) {
-$id = $_GET['idmod'];
-$req = $db->prepare("SELECT * FROM cotationfret WHERE id=?");
-$req->execute([$id]);
-$cotation = $req->fetchAll();
-}
+require_once('config.php');
+// if ($_GET['idsup']) {
+//     $id = $_GET['idsup'];
+//     $req = "DELETE FROM users WHERE username=?";
+//     $resultat = $db->prepare($req);
+//     $resultat->execute([$id]);
+//     header('Location: allUsers.php');
+// }
+
+$req = $pdo->prepare("SELECT * FROM acaht_voiture ORDER BY id DESC ");
+$req->execute();
+$vehicule = $req->fetchAll();
 
 // require_once('check-login.php'); 
 ?>
@@ -88,7 +89,7 @@ $cotation = $req->fetchAll();
                         <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown"><i class="fa fa-car-side me-2"></i>Véhicules</a>
                         <div class="dropdown-menu bg-transparent border-0">
                             <a href="location_vehicule.php" class="dropdown-item">Location</a>
-                            <a href="#" class="dropdown-item">Vente</a>
+                            <a href="./vente_vehicule.php" class="dropdown-item">Vente</a>
                             <!-- <a href="element.html" class="dropdown-item">Other Elements</a> -->
                         </div>
                     </div>
@@ -118,18 +119,39 @@ $cotation = $req->fetchAll();
 
             <div class="container">
                 <div class="mt-90 mb-90 text-center">
-                    <!-- <h1>Consulter les cotations de Fret</h1> -->
+                    <h1>Consulter la liste des voitures vendues</h1>
                 </div>
-                <div class="d-flex justify-content-between mb-3">
-                    <!-- <a href="./signup.php" class=" btn btn-danger">NOUVEAU</a> -->
-                </div>
-               
+                <table class="table table-dark table-hover">
+                    <thead>
+                        <tr>
+                            <th scope="col">#</th>
+                            <th scope="col">Prenom</th>
+                            <th scope="col">Nom</th>
+                            <th scope="col">Téléphone</th>
+                            <th scope="col">Adresse</th>
+                            <th scope="col">Date de vente</th>
+                            <th scope="col">Modele de voiture</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($vehicule as $value) : ?>
+                            <tr>
+                                <th scope="row"><?php echo $value["id"]; ?></th>
+                                <td><?php echo $value["prenom"]; ?></td>
+                                <td><?php echo $value["nom"]; ?></td>
+                                <td><?php echo $value["phone"]; ?></td>
+                                <td><?php echo $value["adresse"]; ?></td>>
+                                <td><?php echo $value["dateAchat"]; ?></td>
+                                <td><?php echo $value["model"]; ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
             </div>
 
         </div>
         <!-- Content End -->
 
-        <input type="text" class="form-control" id="prenom" value="<?php echo $cotation['prenom']; ?>" name="prenom">
 
         <!-- Back to Top -->
         <a href="#" class="btn btn-lg btn-primary btn-lg-square back-to-top"><i class="bi bi-arrow-up"></i></a>

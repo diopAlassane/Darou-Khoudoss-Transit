@@ -1,80 +1,54 @@
 <?php
 
-$host = "localhost";
-$username = "root";
-$password = "";
-$bdname = "darou_khoudoss_transit";
-try {
-    $db = new PDO("mysql:host=$host;dbname=$bdname", "$username", "$password");
-    $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-} catch (PDOException $e) {
-    die("Echec de la connexion :" . $e->getMessage());
+session_start();
+require_once('config.php');
+
+if(isset($_POST['submit']))
+{
+	if(isset($_POST['email'],$_POST['password']) && !empty($_POST['email']) && !empty($_POST['password']))
+	{
+		$email = trim($_POST['email']);
+		$password = trim($_POST['password']);
+
+		if(filter_var($email, FILTER_VALIDATE_EMAIL))
+		{
+			$sql = "select * from members where email = :email ";
+			$handle = $pdo->prepare($sql);
+			$params = ['email'=>$email];
+			$handle->execute($params);
+			if($handle->rowCount() > 0)
+			{
+				$getRow = $handle->fetch(PDO::FETCH_ASSOC);
+				if(password_verify($password, $getRow['password']))
+				{
+					unset($getRow['password']);
+					$_SESSION = $getRow;
+					header('location:index.php');
+					exit();
+				}
+				else
+				{
+					$errors[] = "Mauvais e-mail ou mot de passe";
+				}
+			}
+			else
+			{
+				$errors[] = "Mauvais e-mail ou mot de passe";
+			}
+			
+		}
+		else
+		{
+			$errors[] = "l'adresse email n'est pas valide";	
+		}
+
+	}
+	else
+	{
+		$errors[] = "Email et mot de passe sont requis";	
+	}
+
 }
-
-if (isset($_POST) & !empty($_POST)) {
-    // PHP Form Validations
-    if (empty($_POST['email'])) {
-        $errors[] = "Le champ Nom d'utilisateur / E-mail est obligatoire";
-    }
-    if (empty($_POST['password'])) {
-        $errors[] = "Le champ Mot de passe est obligatoire";
-    }
-    // CSRF Token Validation
-    if (isset($_POST['csrf_token'])) {
-        if ($_POST['csrf_token'] === $_SESSION['csrf_token']) {
-        } else {
-            $errors[] = "Problème avec la validation du CSRF";
-        }
-    }
-    // CSRF Token Time Validation
-    $max_time = 60 * 60 * 24; // in seconds
-    if (isset($_SESSION['csrf_token_time'])) {
-        $token_time = $_SESSION['csrf_token_time'];
-        if (($token_time + $max_time) >= time()) {
-        } else {
-            $errors[] = "CSRF Token Expired";
-            unset($_SESSION['csrf_token']);
-            unset($_SESSION['csrf_token_time']);
-        }
-    }
-
-    if (empty($errors)) {
-        // Check the Login Credentials
-        $sql = "SELECT * FROM users WHERE ";
-        if (filter_var($_POST['email'], FILTER_VALIDATE_EMAIL)) {
-            $sql .= "email=?";
-        } else {
-            $sql .= "username=?";
-        }
-        $result = $db->prepare($sql);
-        $result->execute(array($_POST['email']));
-        $count = $result->rowCount();
-        $res = $result->fetch(PDO::FETCH_ASSOC);
-        if ($count == 1) {
-            // Compare the password with password hash
-            if (password_verify($_POST['password'], $res['password'])) {
-                // regenerate session id
-                session_regenerate_id();
-                $_SESSION['login'] = true;
-                $_SESSION['id'] = $res['id'];
-                $_SESSION['last_login'] = time();
-
-                // redirect the user to members area/dashboard page
-                header("location: index.php");
-            } else {
-                $errors[] = "La combinaison nom d'utilisateur / e-mail et mot de passe ne fonctionne pas";
-            }
-        } else {
-            $errors[] = "Nom d'utilisateur / E-mail non valide";
-        }
-    }
-}
-// 1. Create CSRF token
-$token = md5(uniqid(rand(), TRUE));
-$_SESSION['csrf_token'] = $token;
-$_SESSION['csrf_token_time'] = time();
-
-
 ?>
 
 
@@ -128,21 +102,21 @@ $_SESSION['csrf_token_time'] = time();
                 <div class="col-12 col-sm-8 col-md-6 col-lg-5 col-xl-4">
                     <div class="bg-secondary rounded p-4 p-sm-5 my-4 mx-3">
                         <div class="d-flex align-items-center justify-content-between mb-3">
-                            <a href="index.html" class="">
+                            <a href="index.php" class="">
                                 <h3 class="text-primary"><i class="fa fa-user-edit me-2"></i>DAROU KHOUDOSS TRANSIT</h3>
                             </a>
                             <!-- <h3>Sign In</h3> -->
                         </div>
-                        <?php
-                            if(!empty($errors)){
-                                echo "<div class='alert alert-danger'>";
-                                foreach ($errors as $error) {
-                                    echo "<span class='glyphicon glyphicon-remove'></span>&nbsp;".$error."<br>";
-                                }
-                                echo "</div>";
-                            }
-                        ?>
-                        <form action="login.php" method="POST">
+                        <?php 
+				if(isset($errors) && count($errors) > 0)
+				{
+					foreach($errors as $error_msg)
+					{
+						echo '<div class="alert alert-danger">'.$error_msg.'</div>';
+					}
+				}
+			?>
+                        <form action="<?php echo $_SERVER['PHP_SELF'];?>" method="POST">
                             <div class="form-floating mb-3">
                                 <input type="email" class="form-control" id="floatingInput" name="email" placeholder="name@example.com">
                                 <label for="floatingInput"> Addresse Email</label>
@@ -159,7 +133,7 @@ $_SESSION['csrf_token_time'] = time();
                                 </div>
                                 <a href="./reset.php">Mot de passe oublié ?</a>
                             </div>
-                            <button type="submit" class="btn btn-primary py-3 w-100 mb-4">SE CONNECTER</button>
+                            <button type="submit" name="submit" class="btn btn-primary py-3 w-100 mb-4">SE CONNECTER</button>
                             <!-- <p class="text-center mb-0">Don't have an Account? <a href="">Sign Up</a></p> -->
                         </form>
                     </div>

@@ -1,16 +1,13 @@
 <?php
-$host = "localhost";
-$username = "root";
-$password = "";
-$bdname = "darou_khoudoss_transit";
-try {
-    $db = new PDO("mysql:host=$host;dbname=$bdname", "$username", "$password");
-    $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-} catch (PDOException $e) {
-    die("Echec de la connexion :" . $e->getMessage());
+session_start();
+  
+if(!$_SESSION['id']){
+    header('location:login.php');
 }
 
-$req = $db->prepare("SELECT * FROM cotationfret ORDER BY id DESC ");
+require_once('config.php');
+
+$req = $pdo->prepare("SELECT * FROM cotationfret ORDER BY id DESC ");
 $req->execute();
 $cotation = $req->fetchAll();
 
@@ -67,7 +64,7 @@ $cotation = $req->fetchAll();
         <!-- Sidebar Start -->
         <div class="sidebar pe-4 pb-3">
             <nav class="navbar bg-secondary navbar-dark">
-                <a href="index.html" class="navbar-brand mx-4 mb-3">
+                <a href="index.php" class="navbar-brand mx-4 mb-3">
                     <h3 class="text-primary"><i class="fa fa-user-edit me-2"></i>D.K. TRANSIT</h3>
                 </a>
 
@@ -76,7 +73,7 @@ $cotation = $req->fetchAll();
                 <div class="navbar-nav w-100">
                     <a href="index.php" class="nav-item nav-link active"><i class="fa fa-tachometer-alt me-2"></i>Dashboard</a>
                     <div class="nav-item dropdown">
-                        <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown"><i class="fa fa-laptop me-2"></i>Utilisateurs</a>
+                        <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown"><i class="fa fa-users me-2"></i>Utilisateurs</a>
                         <div class="dropdown-menu bg-transparent border-0">
                             <a href="signup.php" class="dropdown-item">Nouveau</a>
                             <a href="allUsers.php" class="dropdown-item">Consulter</a>
@@ -87,11 +84,12 @@ $cotation = $req->fetchAll();
                         <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown"><i class="fa fa-car-side me-2"></i>Véhicules</a>
                         <div class="dropdown-menu bg-transparent border-0">
                             <a href="location_vehicule.php" class="dropdown-item">Location</a>
-                            <a href="#" class="dropdown-item">Vente</a>
+                            <a href="./vente_vehicule.php" class="dropdown-item">Vente</a>
                             <!-- <a href="element.html" class="dropdown-item">Other Elements</a> -->
                         </div>
                     </div>
                     <a href="./cota.php" class="nav-item nav-link"><i class="fa fa-th me-2"></i>Cotation Fret</a>
+                    <a href="./contact_admin.php" class="nav-item nav-link"><i class="fa fa-address-book me-2"></i>Contact</a>
                     <a href="./logout.php" class="nav-item nav-link"><i class="fa fa-user me-2"></i>Se déconnecter</a>
 
                 </div>
@@ -133,7 +131,7 @@ $cotation = $req->fetchAll();
                             <th scope="col">Entreprise</th>
                             <th scope="col">Prestation souhaités</th>
                             <th scope="col">Commentaires/Questions</th>
-                            <th scope="col">Actions</th>
+                            <!-- <th scope="col">Actions</th> -->
                         </tr>
                     </thead>
                     <tbody>
@@ -147,12 +145,12 @@ $cotation = $req->fetchAll();
                                 <td><?php echo $value["entreprise"]; ?></td>
                                 <td><?php echo $value["prestation"]; ?></td>
                                 <td><?php echo $value["commentaire"]; ?></td>
-                                <td>
+                                <!-- <td>
                                     <a class="btn btn-outline btn-primary" href="showCota.php?idmod=<?php echo $value['id'] ?>">Voir</a>
                                     <a class="btn btn-outline-danger" href="#">
                                         Suppimer
                                     </a>
-                                </td>
+                                </td> -->
                             </tr>
                         <?php endforeach; ?>
                     </tbody>

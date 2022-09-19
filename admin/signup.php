@@ -1,114 +1,113 @@
 <?php
-$host = "localhost";
-$username = "root";
-$password = "";
-$bdname = "darou_khoudoss_transit";
-try {
-    $db = new PDO("mysql:host=$host;dbname=$bdname", "$username", "$password");
-    $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-} catch (PDOException $e) {
-    die("Echec de la connexion :" . $e->getMessage());
+session_start();
+  
+if(!$_SESSION['id']){
+    header('location:login.php');
 }
 
-if (isset($_POST) & !empty($_POST)) {
-    // PHP Form Validations
-    if (empty($_POST['username'])) {
-        $errors[] = "Le champ Nom d'utilisateur est obligatoire";
-    } else {
-        // Check Username is Unique with DB query
-        $sql = "SELECT * FROM users WHERE username=?";
-        $result = $db->prepare($sql);
-        $result->execute(array($_POST['username']));
-        $count = $result->rowCount();
-        if ($count == 1) {
-            $errors[] = "Le nom d'utilisateur existe déjà dans la base de données";
-        }
-    }
-    if (empty($_POST['email'])) {
-        $errors[] = "Le champ E-mail est obligatoire";
-    } else {
-        // Check Email is Unique with DB Query
-        $sql = "SELECT * FROM users WHERE email=?";
-        $result = $db->prepare($sql);
-        $result->execute(array($_POST['email']));
-        $count = $result->rowCount();
-        if ($count == 1) {
-            $errors[] = "L'e-mail existe déjà dans la base de données";
-        }
-    }
-    if (empty($_POST['mobile'])) {
-        $errors[] = "Le champ Mobile est obligatoire";
-    }
-    if (empty($_POST['password'])) {
-        $errors[] = "Le champ Mot de passe est obligatoire";
-    } else {
-        // check the repeat password
-        if (empty($_POST['passwordr'])) {
-            $errors[] = "Le champ Répéter le mot de passe est obligatoire";
-        } else {
-            // compare both passwords, if they match. Generate the Password Hash
-            if ($_POST['password'] == $_POST['passwordr']) {
-                // create password hash
-                $pass_hash = password_hash($_POST['password'], PASSWORD_DEFAULT);
-            } else {
-                // Display Error Message
-                $errors[] = "Les deux mots de passe doivent correspondre";
+require_once('config.php');
+
+if(isset($_POST['submit']))
+{
+    if(isset($_POST['first_name'],$_POST['last_name'],$_POST['email'],$_POST['password']) && !empty($_POST['first_name']) && !empty($_POST['last_name']) && !empty($_POST['email']) && !empty($_POST['password']))
+    {
+        $firstName = trim($_POST['first_name']);
+        $lastName = trim($_POST['last_name']);
+        $email = trim($_POST['email']);
+        $password = trim($_POST['password']);
+        $phone = trim($_POST['phone']);
+        
+        $options = array("cost"=>4);
+        $hashPassword = password_hash($password,PASSWORD_BCRYPT,$options);
+        $date = date('Y-m-d H:i:s');
+
+        if(filter_var($email, FILTER_VALIDATE_EMAIL))
+		{
+            $sql = 'select * from members where email = :email';
+            $stmt = $pdo->prepare($sql);
+            $p = ['email'=>$email];
+            $stmt->execute($p);
+            
+            if($stmt->rowCount() == 0)
+            {
+                $sql = "insert into members (first_name, last_name, email, phone, `password`, created_at,updated_at) values(:fname,:lname,:email,:phone,:pass,:created_at,:updated_at)";
+            
+                try{
+                    $handle = $pdo->prepare($sql);
+                    $params = [
+                        ':fname'=>$firstName,
+                        ':lname'=>$lastName,
+                        ':email'=>$email,
+                        ':phone'=>$phone,
+                        ':pass'=>$hashPassword,
+                        ':created_at'=>$date,
+                        ':updated_at'=>$date
+                    ];
+                    
+                    $handle->execute($params);
+                    
+                    $success = 'L\'utilisateur a été créé avec succès';
+                    
+                }
+                catch(PDOException $e){
+                    $errors[] = $e->getMessage();
+                }
+            }
+            else
+            {
+                $valFirstName = $firstName;
+                $valLastName = $lastName;
+                $valEmail = '';
+                $valPassword = $password;
+
+                $errors[] = 'L\'adresse email est déjà enregistrée';
             }
         }
+        else
+        {
+            $errors[] = "l'adresse email n'est pas valide";
+        }
+    }
+    else
+    {
+        if(!isset($_POST['first_name']) || empty($_POST['first_name']))
+        {
+            $errors[] = 'Le prénom est requis';
+        }
+        else
+        {
+            $valFirstName = $_POST['first_name'];
+        }
+        if(!isset($_POST['last_name']) || empty($_POST['last_name']))
+        {
+            $errors[] = 'Le nom est requis';
+        }
+        else
+        {
+            $valLastName = $_POST['last_name'];
+        }
+
+        if(!isset($_POST['email']) || empty($_POST['email']))
+        {
+            $errors[] = 'L\'adresse est requis';
+        }
+        else
+        {
+            $valEmail = $_POST['email'];
+        }
+
+        if(!isset($_POST['password']) || empty($_POST['password']))
+        {
+            $errors[] = 'Le mot de passe est requis';
+        }
+        else
+        {
+            $valPassword = $_POST['password'];
+        }
+        
     }
 
-    // CSRF Token Validation
-    if (isset($_POST['csrf_token'])) {
-        if ($_POST['csrf_token'] === $_SESSION['csrf_token']) {
-        } else {
-            $errors[] = "Problème avec la validation du CSRF";
-        }
-    }
-    // CSRF Token Time Validation
-    $max_time = 60 * 60 * 24; // in seconds
-    if (isset($_SESSION['csrf_token_time'])) {
-        $token_time = $_SESSION['csrf_token_time'];
-        if (($token_time + $max_time) >= time()) {
-        } else {
-            $errors[] = "CSRF expiré";
-            unset($_SESSION['csrf_token']);
-            unset($_SESSION['csrf_token_time']);
-        }
-    }
-
-    // If no Errors, Insert the Values into users table
-    if (empty($errors)) {
-        $sql = "INSERT INTO users (username, email, password) VALUES (:username, :email, :password)";
-        $result = $db->prepare($sql);
-        $values = array(
-            ':username'     => $_POST['username'],
-            ':email'        => $_POST['email'],
-            ':password'     => $pass_hash
-        );
-        $res = $result->execute($values);
-        if ($res) {
-            $messages[] = "Utilisateur enregistré";
-            // get the id from last insert query and insert a new record into user_info table with mobile number
-            $userid = $db->lastInsertID();
-            $uisql = "INSERT INTO user_info (uid, mobile) VALUES (:uid, :mobile)";
-            $uiresult = $db->prepare($uisql);
-            $values = array(
-                ':uid'          => $userid,
-                ':mobile'       => $_POST['mobile']
-            );
-            $uires = $uiresult->execute($values) or die(print_r($result->errorInfo(), true));
-            if ($uires) {
-                $messages[] = "informations utilisateur ajoutées";
-            }
-        }
-    }
 }
-// CSRF Protection
-// 1. Create CSRF token
-$token = md5(uniqid(rand(), TRUE));
-$_SESSION['csrf_token'] = $token;
-$_SESSION['csrf_token_time'] = time();
-
 ?>
 
 <!DOCTYPE html>
@@ -166,45 +165,46 @@ $_SESSION['csrf_token_time'] = time();
                             </a>
                             <!-- <h3>S'inscrire</h3> -->
                         </div>
-                        <?php
-                        if (!empty($errors)) {
-                            echo "<div class='alert alert-danger'>";
-                            foreach ($errors as $error) {
-                                echo "<span class='glyphicon glyphicon-remove'></span>&nbsp;" . $error . "<br>";
-                            }
-                            echo "</div>";
-                        }
-                        ?>
-                        <?php
-                        if (!empty($messages)) {
-                            echo "<div class='alert alert-success'>";
-                            foreach ($messages as $message) {
-                                echo "<span class='glyphicon glyphicon-ok'></span>&nbsp;" . $message . "<br>";
-                            }
-                            echo "</div>";
-                        }
-                        ?>
+                        <?php 
+				if(isset($errors) && count($errors) > 0)
+				{
+					foreach($errors as $error_msg)
+					{
+						echo '<div class="alert alert-danger">'.$error_msg.'</div>';
+					}
+                }
+                
+                if(isset($success))
+                {
+                    
+                    echo '<div class="alert alert-success">'.$success.'</div>';
+                }
+			?>
                         <form action="signup.php" method="POST">
                             <div class="form-floating mb-3">
-                                <input type="text" class="form-control" id="floatingText" name="username" placeholder="jhondoe value=" <?php if(isset($_POST['username'])){ echo $_POST['username']; } ?>>
-                                <label for="floatingText">Nom d'utilisateur</label>
+                                <input type="text" class="form-control" id="first_name" name="first_name" placeholder="Alassane" value="<?php echo ($valFirstName??'')?>">
+                                <label for="floatingText">Prénom</label>
                             </div>
                             <div class="form-floating mb-3">
-                                <input type="email" class="form-control" id="floatingInput" name="email" placeholder="name@example.com" <?php if(isset($_POST['email'])){ echo $_POST['email']; } ?>>
+                                <input type="text" class="form-control" id="last_name" name="last_name" placeholder="DIOP" value="<?php echo ($valLastName??'')?>">
+                                <label for="floatingText">Nom</label>
+                            </div>
+                            <div class="form-floating mb-3">
+                                <input type="email" class="form-control" id="floatingInput" name="email" placeholder="joop@example.com" value="<?php echo ($valEmail??'')?>">
                                 <label for="floatingInput">Adresse Email</label>
                             </div>
                             <div class="form-floating mb-3">
-                                <input type="tel" class="form-control" id="floatingInput" name="mobile" placeholder="+221784589933" <?php if(isset($_POST['mobile'])){ echo $_POST['mobile']; } ?>>
-                                <label for="floatingInput">Numéro téléphone</label>
+                                <input type="tel" class="form-control" id="phone" name="phone" placeholder="+221784589933">
+                                <label for="phone">Numéro téléphone</label>
                             </div>
                             <div class="form-floating mb-4">
-                                <input type="password" class="form-control" id="floatingPassword" name="password" placeholder="Password">
+                                <input type="password" class="form-control" id="floatingPassword" name="password" placeholder="Password" value="<?php echo ($valPassword??'')?>">
                                 <label for="floatingPassword">Mot de passe</label>
                             </div>
-                            <div class="form-floating mb-4">
+                            <!-- <div class="form-floating mb-4">
                                 <input type="password" class="form-control" id="floatingPassword" name="passwordr" placeholder="Password">
                                 <label for="floatingPassword">Répéter le mot de passe</label>
-                            </div>
+                            </div> -->
                             <div class="d-flex align-items-center justify-content-between mb-4">
                                 <!-- <div class="form-check">
                                 <input type="checkbox" class="form-check-input" id="exampleCheck1">
@@ -212,7 +212,7 @@ $_SESSION['csrf_token_time'] = time();
                             </div> -->
                                 <!-- <a href="">Mot de passe oublié ?</a> -->
                             </div>
-                            <button type="submit" class="btn btn-primary py-3 w-100 mb-4">NOUVEL UTILISATEUR</button>
+                            <button type="submit" name="submit" class="btn btn-primary py-3 w-100 mb-4">NOUVEL UTILISATEUR</button>
                             <p class="text-center mb-0"> <a href="./index.php"> <i class="fa fa-backward me-2"></i> Retourner à la page d'accueil</a></p>
                         </form>
                     </div>
